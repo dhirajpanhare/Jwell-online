@@ -1,20 +1,11 @@
 @import "tailwindcss";
 
-@theme {
-  --color-maroon: #B22234;
-  --color-teal: #008B8B;
-  --color-gold: #FFC000;
-  --color-mustard: #FFDB58;
-  --color-blush: #FFC0CB;
-  --color-offwhite: #F5F5F5;
-}
-
 @layer base {
   * {
     border-color: theme(colors.gray.200);
   }
   body {
-    background-color: theme(colors.offwhite);
+    background-color: #F5F5F5;
     color: theme(colors.gray.900);
     font-family: theme(fontFamily.sans);
   }
@@ -22,7 +13,7 @@
 
 @layer components {
   .btn-primary {
-    background-color: theme(colors.teal);
+    background-color: #008B8B;
     color: white;
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
@@ -31,11 +22,11 @@
   }
   
   .btn-primary:hover {
-    background-color: color-mix(in srgb, theme(colors.teal) 90%, black);
+    background-color: #006B6B;
   }
   
   .btn-secondary {
-    background-color: theme(colors.maroon);
+    background-color: #B22234;
     color: white;
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
@@ -44,7 +35,7 @@
   }
   
   .btn-secondary:hover {
-    background-color: color-mix(in srgb, theme(colors.maroon) 90%, black);
+    background-color: #8B1A28;
   }
   
   .card-shadow {

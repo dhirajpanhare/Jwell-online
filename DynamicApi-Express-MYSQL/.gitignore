@@ -1,0 +1,111 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+npm-error.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+yarn-integrity
+pnpm-debug.log*
+
+# Build Output
+dist/
+build/
+out/
+output/
+.tsc-output/
+
+# IDE and Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.project
+.classpath
+*.sublime-project
+*.sublime-workspace
+.c9/
+*.launch
+.settings/
+*.tern-port
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# VS Code specific
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# WebStorm/IntelliJ
+*.iml
+*.iws
+*.ipr
+out/
+
+# Visual Studio
+.vs/
+.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+*.sql
+
+# npm Cache
+.npm
+.eslintcache
+.node_repl_history
+
+# Temporary Files
+*.tmp
+*.bak
+*.backup
+.cache
+.parcel-cache
+
+# Package Lock Files (optional - uncomment if needed)
+# package-lock.json
+
+# Cloudflare Workers
+.wrangler/
+wrangler.toml.bak
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Testing
+.jest-cache/
+.mocha-cache/
+

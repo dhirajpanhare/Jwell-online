@@ -3,43 +3,48 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import ProductCard, { ProductCardSkeleton } from '../components/ProductCard';
 import TrustBadges from '../components/TrustBadges';
-import { fetchBestSellers, fetchCategories, fetchTestimonials } from '../api/mockData';
+import { useBestSellers } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
+import { getTestimonials } from '../services/testimonialService';
 
 const Home = () => {
-  const [bestSellers, setBestSellers] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const { products: bestSellers, loading: bestsellersLoading, error: bestsellersError } = useBestSellers(6);
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const [testimonials, setTestimonials] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
+  // Fetch testimonials (can be mock or API)
   useEffect(() => {
-    const loadData = async () => {
+    const loadTestimonials = async () => {
       try {
-        const [sellersRes, categoriesRes, testimonialsRes] = await Promise.all([
-          fetchBestSellers(),
-          fetchCategories(),
-          fetchTestimonials(),
-        ]);
-        setBestSellers(sellersRes.data);
-        setCategories(categoriesRes.data);
-        setTestimonials(testimonialsRes.data);
+        const data = await getTestimonials();
+        setTestimonials(data);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading testimonials:', error);
+        // Fallback to empty array
+        setTestimonials([]);
       } finally {
-        setLoading(false);
+        setTestimonialsLoading(false);
       }
     };
 
-    loadData();
+    loadTestimonials();
   }, []);
 
   const nextTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    if (testimonials.length > 0) {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }
   };
 
   const prevTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    if (testimonials.length > 0) {
+      setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    }
   };
+
+  const loading = bestsellersLoading || categoriesLoading || testimonialsLoading;
 
   return (
     <div className="min-h-screen">
@@ -79,7 +84,7 @@ const Home = () => {
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             Shop by Category
           </h2>
-          {loading ? (
+          {categoriesLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="animate-pulse">
@@ -88,12 +93,16 @@ const Home = () => {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : categoriesError ? (
+            <div className="text-center text-red-600">
+              Error loading categories
+            </div>
+          ) : categories.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {categories.map((category) => (
                 <Link
                   key={category.id}
-                  to={`/products?category=${category.name}`}
+                  to={`/products?category=${encodeURIComponent(category.name)}`}
                   className="group text-center"
                 >
                   <div className="aspect-square rounded-full overflow-hidden mb-4 card-shadow">
@@ -109,6 +118,10 @@ const Home = () => {
                   <p className="text-sm text-gray-600">{category.count} items</p>
                 </Link>
               ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-600">
+              No categories available
             </div>
           )}
         </div>
@@ -126,17 +139,25 @@ const Home = () => {
               View All
             </Link>
           </div>
-          {loading ? (
+          {bestsellersLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[...Array(6)].map((_, i) => (
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
-          ) : (
+          ) : bestsellersError ? (
+            <div className="text-center text-red-600">
+              Error loading best sellers
+            </div>
+          ) : bestSellers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {bestSellers.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-600">
+              No products available
             </div>
           )}
         </div>
@@ -151,11 +172,11 @@ const Home = () => {
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             What Our Customers Say
           </h2>
-          {loading ? (
+          {testimonialsLoading ? (
             <div className="max-w-3xl mx-auto animate-pulse">
               <div className="h-32 bg-gray-200 rounded-lg"></div>
             </div>
-          ) : (
+          ) : testimonials.length > 0 ? (
             <div className="max-w-3xl mx-auto relative">
               <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
                 <div className="flex justify-center mb-4">
@@ -197,6 +218,10 @@ const Home = () => {
                   ></button>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="text-center text-gray-600">
+              No testimonials available
             </div>
           )}
         </div>

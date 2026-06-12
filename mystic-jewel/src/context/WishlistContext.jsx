@@ -1,63 +1,35 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext } from 'react';
+import useWishlistHook from '../hooks/useWishlist';
 
 const WishlistContext = createContext();
 
-export const useWishlist = () => {
+export const useWishlistContext = () => {
   const context = useContext(WishlistContext);
   if (!context) {
-    throw new Error('useWishlist must be used within WishlistProvider');
+    throw new Error('useWishlistContext must be used within WishlistProvider');
   }
   return context;
 };
 
+// Keep useWishlist as an alias for backward compatibility (though it conflicts with hook name)
+export const useWishlist = () => {
+  return useWishlistContext();
+};
+
 export const WishlistProvider = ({ children }) => {
-  const [wishlistItems, setWishlistItems] = useState(() => {
-    const saved = localStorage.getItem('wishlist');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
-  }, [wishlistItems]);
-
-  const addToWishlist = (product) => {
-    setWishlistItems(prev => {
-      const exists = prev.find(item => item.id === product.id);
-      if (exists) return prev;
-      return [...prev, product];
-    });
-  };
-
-  const removeFromWishlist = (productId) => {
-    setWishlistItems(prev => prev.filter(item => item.id !== productId));
-  };
-
-  const toggleWishlist = (product) => {
-    const exists = wishlistItems.find(item => item.id === product.id);
-    if (exists) {
-      removeFromWishlist(product.id);
-    } else {
-      addToWishlist(product);
-    }
-  };
-
-  const isInWishlist = (productId) => {
-    return wishlistItems.some(item => item.id === productId);
-  };
-
-  const clearWishlist = () => {
-    setWishlistItems([]);
-  };
+  const wishlist = useWishlistHook();
 
   return (
     <WishlistContext.Provider
       value={{
-        wishlistItems,
-        addToWishlist,
-        removeFromWishlist,
-        toggleWishlist,
-        isInWishlist,
-        clearWishlist,
+        wishlistItems: wishlist.wishlistItems,
+        addToWishlist: wishlist.addToWishlist,
+        removeFromWishlist: wishlist.removeFromWishlist,
+        toggleWishlist: wishlist.toggleWishlist,
+        isInWishlist: wishlist.isInWishlist,
+        clearWishlist: wishlist.clearWishlist,
+        loading: wishlist.loading,
+        error: wishlist.error,
       }}
     >
       {children}
