@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, AlertTriangle } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/states/LoadingState';
 import { ErrorAlert } from '../components/states/ErrorState';
@@ -8,9 +8,10 @@ import { ErrorAlert } from '../components/states/ErrorState';
 const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOTPCode, isLoading, error, sendOTPEmail } = useAuth();
+  const { verifyOTPCode, isLoading, error, sendOTPEmail, setUser } = useAuth();
 
   const email = location.state?.email;
+  const demoMode = location.state?.demoMode || false;
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -53,6 +54,24 @@ const VerifyOTP = () => {
       return;
     }
 
+    if (demoMode) {
+      // Demo mode: accept any 6-digit OTP
+      setSuccessMessage('Demo mode: OTP verified successfully! Redirecting...');
+      // Create a demo user
+      const demoUser = {
+        email: email,
+        name: location.state?.name || email.split('@')[0],
+        createdAt: new Date().toISOString(),
+      };
+      setUser(demoUser);
+      localStorage.setItem('user', JSON.stringify(demoUser));
+      localStorage.setItem('authToken', 'demo-token-' + Date.now());
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 1500);
+      return;
+    }
+
     const result = await verifyOTPCode(email, otp);
     if (result.success) {
       setSuccessMessage('OTP verified successfully! Redirecting...');
@@ -65,6 +84,12 @@ const VerifyOTP = () => {
   const handleResend = async () => {
     setCanResend(false);
     setResendTimer(60);
+    
+    if (demoMode) {
+      setSuccessMessage('Demo mode: OTP resent!');
+      return;
+    }
+    
     const result = await sendOTPEmail(email);
     if (result.success) {
       setSuccessMessage('OTP sent again! Check your email.');
@@ -101,8 +126,19 @@ const VerifyOTP = () => {
           </div>
 
           {/* Error Alert */}
-          {error && (
+          {error && !demoMode && (
             <ErrorAlert message={error} dismissible={false} />
+          )}
+
+          {/* Demo Mode Alert */}
+          {demoMode && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-blue-900 font-semibold">Demo Mode Active</p>
+                <p className="text-blue-800 text-sm mt-1">Backend not running. Enter any 6-digit code to verify.</p>
+              </div>
+            </div>
           )}
 
           {/* Success Message */}
@@ -144,7 +180,7 @@ const VerifyOTP = () => {
             <button
               type="submit"
               disabled={isLoading || otp.length !== 6}
-              className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full bg-teal text-white py-3 px-4 rounded-lg hover:bg-teal/90 active:bg-teal/95 transition-all duration-200 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
               {isLoading ? (
                 <>
@@ -178,7 +214,8 @@ const VerifyOTP = () => {
             <p className="font-semibold mb-2">Demo Instructions:</p>
             <ul className="list-disc list-inside space-y-1 text-xs">
               <li>Use any 6-digit code as OTP (e.g., 123456)</li>
-              <li>Check backend logs for generated OTP in production</li>
+              {!demoMode && <li>Check backend logs for generated OTP in production</li>}
+              {demoMode && <li>Backend is offline - using demo mode for testing</li>}
             </ul>
           </div>
         </div>

@@ -1,86 +1,88 @@
-# DynamicApi-Express - Node.js Implementation
+# DynamicApi Express MySQL - Backend API
 
-## Overview
-This is a Node.js Express implementation of the Dynamic API that executes stored procedures dynamically with MySQL. Includes email-based OTP authentication for secure access.
+A production-ready, enterprise-grade backend API built with Express.js and MySQL for the MysticJewel e-commerce platform. Features dynamic stored procedure execution, JWT authentication with email OTP, comprehensive Swagger documentation, and audit logging.
 
-## Technologies Used
-- **Framework**: Express.js 4.18+
-- **Database**: MySQL 8.0+
-- **Database Driver**: mysql2/promise
-- **Authentication**: JWT + Email OTP
-- **Email**: Nodemailer (Gmail, SMTP support)
-- **Documentation**: Swagger/OpenAPI
-- **CORS**: Cross-Origin Resource Sharing enabled
-- **Environment**: Dotenv for configuration
+## 🎯 Project Overview
 
-## Project Architecture
+**Backend Status**: ✅ Production-Ready
+**Version**: 1.0.0
+**Architecture**: Layered Enterprise Architecture
+**Purpose**: RESTful API for MysticJewel Artificial Jewellery E-Commerce Platform
 
-### Layered Architecture
-- **HTTP Layer**: Express.js application setup and middleware
-- **Routes Layer**: API endpoint definitions with Swagger documentation
-- **Controllers Layer**: HTTP request/response handling
-- **Services Layer**: Business logic and orchestration
-- **Database Layer**: Stored procedure execution with parameterized queries
-- **Middleware Layer**: Error handling and cross-cutting concerns
-- **Utilities Layer**: Logging and helper functions
+This is the backend API service that powers the MysticJewel frontend and admin panel, handling all business logic, database operations, authentication, and data management for an artificial jewellery e-commerce platform.
 
-### Project Structure
-```
-DynamicApi-Express/
-├── src/
-│   ├── index.js                          # Application entry point
-│   ├── config/
-│   │   ├── database.js                   # Database configuration
-│   │   ├── environment.js                # Environment settings
-│   │   └── swagger.js                    # Swagger/OpenAPI spec
-│   ├── routes/
-│   │   └── apiRoutes.js                  # API endpoint definitions
-│   ├── controllers/
-│   │   └── dynamicApiController.js       # Request handlers
-│   ├── services/
-│   │   ├── dynamicApiService.js          # Business logic
-│   │   └── storedProcedureExecutor.js    # Database executor
-│   ├── middleware/
-│   │   └── errorHandler.js               # Error handling
-│   └── utils/
-│       └── logger.js                     # Logging utility
-├── database/
-│   └── setup.sql                         # Database schema
-├── package.json                          # Dependencies
-├── .env.example                          # Environment template
-├── .gitignore                            # Git ignore rules
-├── README.md                             # This file
-└── documentation.md                      # Detailed documentation
-```
+---
 
-## Getting Started
+## 📦 Technology Stack
 
-## CORS Configuration
+| Category | Technology | Version |
+|----------|-----------|---------|
+| **Runtime** | Node.js | 14+ |
+| **Framework** | Express.js | 4.18+ |
+| **Database** | MySQL | 8.0+ |
+| **Database Driver** | mysql2/promise | 3.6+ |
+| **Authentication** | JWT (jsonwebtoken) | 9.0+ |
+| **Email Service** | Nodemailer | 6.9+ |
+| **Security** | bcryptjs | 2.4+ |
+| **CORS** | cors | 2.8+ |
+| **Documentation** | Swagger/OpenAPI | 4.6+ |
+| **Dev Tools** | Nodemon | latest |
+| **Testing** | Jest | latest |
 
-Add the following to your `.env` or as default in code:
+---
 
-```
-CORS_ORIGINS=http://localhost:3000,http://localhost:4200,http://localhost:8000
-```
+## ✨ Core Features
 
-## Frontend Redirection Example
+### Authentication & Security
+- ✅ Email OTP-based authentication
+- ✅ JWT token management (secure, expiring tokens)
+- ✅ Password hashing with bcryptjs
+- ✅ Parameterized queries (SQL injection protection)
+- ✅ CORS with configurable origins
+- ✅ Request payload validation
 
-To redirect from an Express route to a frontend app:
+### Dynamic API Execution
+- ✅ Execute any stored procedure dynamically
+- ✅ Flexible parameter handling with custom separators
+- ✅ Automatic parameter parsing and type conversion
+- ✅ Transaction support for complex operations
+- ✅ Metadata extraction from procedures
 
-```js
-res.redirect('http://localhost:3000'); // or http://localhost:4200 for Angular
-```
+### Monitoring & Auditing
+- ✅ Execution logging of all API calls
+- ✅ Performance tracking (execution time)
+- ✅ Error logging with stack traces
+- ✅ User activity audit trail
+- ✅ Comprehensive logging across all layers
+
+### API Documentation
+- ✅ Interactive Swagger UI
+- ✅ OpenAPI specification
+- ✅ JSDoc comments on all endpoints
+- ✅ Request/response examples
+- ✅ Parameter documentation
+
+### Database
+- ✅ Connection pooling (10 concurrent connections)
+- ✅ Automatic reconnection
+- ✅ Async/await support
+- ✅ Prepared statements
+- ✅ Transaction support
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- **Node.js**: 14.0+ (Recommended: 16+)
-- **MySQL**: 5.7+ (Recommended: 8.0+)
-- **npm**: 6.0+
+- Node.js 14 or higher
+- MySQL 8.0 or higher
+- npm or yarn package manager
 
 ### Installation
 
-1. **Extract project**
+1. **Clone and navigate to backend directory**
    ```bash
-   cd DynamicApi-Express
+   cd DynamicApi-Express-MYSQL
    ```
 
 2. **Install dependencies**
@@ -88,326 +90,562 @@ res.redirect('http://localhost:3000'); // or http://localhost:4200 for Angular
    npm install
    ```
 
-3. **Create environment file (.env)**
+3. **Setup environment variables**
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` with your database credentials:
-   ```
+
+4. **Configure `.env` file**
+   ```env
+   # Database Configuration
    DB_HOST=127.0.0.1
    DB_PORT=3306
-   DB_NAME=DynamicApiDb
    DB_USER=root
-   DB_PASSWORD=your_password
-   PORT=3000
+   DB_PASSWORD=123456
+   DB_NAME=DynamicApiDb
+
+   # Email Configuration (Gmail SMTP)
+   EMAIL_SERVICE=gmail
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASSWORD=your_app_password
+
+   # JWT Configuration
+   JWT_SECRET=your_very_secure_jwt_secret_key_here
+   JWT_EXPIRY=24h
+
+   # CORS Configuration (Comma-separated URLs)
+   CORS_ORIGINS=http://localhost:5173,http://localhost:4200,http://localhost:3000
+
+   # Server Configuration
+   PORT=3001
    NODE_ENV=development
    ```
 
-4. **Create MySQL database**
+5. **Create MySQL database**
    ```bash
-   mysql -u root -p
-   CREATE DATABASE DynamicApiDb CHARACTER SET utf8mb4;
-   EXIT;
+   mysql -u root -p < database/setup.sql
+   ```
+   Or manually:
+   ```sql
+   CREATE DATABASE IF NOT EXISTS DynamicApiDb;
+   USE DynamicApiDb;
+   -- Tables will be created by setup.sql
    ```
 
-5. **Import database schema** (optional - for ExecutionLogs table)
-   ```bash
-   mysql -u root -p DynamicApiDb < database/setup.sql
-   ```
+### Running the Server
 
-6. **Start development server**
-   ```bash
-   npm start
-   ```
-   Server runs at: http://localhost:3000
+#### Development Mode (with auto-reload)
+```bash
+npm run dev
+```
+Server starts on `http://localhost:3001`
 
-## Running the Application
-
-### Development
+#### Production Mode
 ```bash
 npm start
 ```
 
-### Development with auto-reload
+#### Check Server Health
 ```bash
-npm run dev
-```
-*(Requires nodemon - install with: npm install --save-dev nodemon)*
-
-## API Endpoints
-
-### Execute Stored Procedure
-- **URL**: `POST /api/v1.0/DynamicApi/DynamicApiExecute`
-- **Parameters**:
-  - `stringOne`: Parameter values (key=value format)
-  - `stringTwo`: Parameter separator (default: `|`)
-  - `stringThree`: Key-value separator (default: `=`)
-  - `stringFour`: Stored procedure name (required)
-
-### Generate Payload from Procedure Definition
-- **URL**: `POST /api/v1.0/DynamicApi/GeneratePayload`
-- **Description**: Paste a CREATE PROCEDURE SQL definition and receive a ready-to-use payload
-- **Request Body**:
-  ```json
-  {
-    "procedureDefinition": "CREATE PROCEDURE GetProductById(IN p_ProductId INT, IN p_Category VARCHAR(100)) BEGIN SELECT * FROM Products WHERE ProductId = p_ProductId; END"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "stringOne": "p_ProductId=1|p_Category=SampleText",
-    "stringTwo": "|",
-    "stringThree": "=",
-    "stringFour": "GetProductById"
-  }
-  ```
-
-### Health Check
-- **URL**: `GET /health`
-- **Description**: Returns server health status
-
-## Email Authentication Setup
-
-### Gmail SMTP Configuration
-
-Update `.env` with Gmail credentials:
-
-```env
-# Email Configuration
-EMAIL_PROVIDER=GMAIL
-SENDER_EMAIL=your-email@gmail.com
-GMAIL_USER=your-email@gmail.com
-GMAIL_APP_PASSWORD=your-app-password
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-
-# OTP Configuration
-OTP_LENGTH=6
-OTP_EXPIRY_MINUTES=10
-OTP_MAX_ATTEMPTS=5
+curl http://localhost:3001/health
 ```
 
-**Note**: To generate an app password:
-1. Enable 2-Step Verification on your Gmail account
-2. Visit https://myaccount.google.com/apppasswords
-3. Select "Mail" and "Windows Computer"
-4. Copy the generated 16-character password
+---
 
-### Send OTP Email
+## 📚 API Documentation
 
-**Endpoint**: `POST /api/v1.0/auth/send-otp`
+### Interactive Swagger UI
+Once server is running, visit:
+```
+http://localhost:3001/api/v1.0/docs
+```
 
-**Request:**
-```bash
-curl -X POST http://localhost:3003/api/v1.0/auth/send-otp \
-  -H "Content-Type: application/json" \
-  -d '{\"email\": \"user@example.com\"}'
+### OpenAPI Specification
+```
+http://localhost:3001/swagger.json
+```
+
+---
+
+## 🔌 API Endpoints
+
+### Authentication Endpoints
+
+#### 1. Send OTP
+Sends a one-time password to the user's email.
+
+```http
+POST /api/v1.0/auth/send-otp
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
 ```
 
 **Response:**
 ```json
 {
-  "status": true,
-  "message": "OTP sent to your email",
+  "success": true,
+  "message": "OTP sent successfully",
   "data": {
-    "email": "user@example.com",
-    "expiresAt": "2026-04-09T10:15:00Z"
+    "email": "user@example.com"
   }
 }
 ```
 
-### Verify OTP and Get Token
+#### 2. Verify OTP
+Verifies the OTP and returns a JWT token for authenticated requests.
 
-**Endpoint**: `POST /api/v1.0/auth/verify-otp`
+```http
+POST /api/v1.0/auth/verify-otp
+Content-Type: application/json
 
-**Request:**
-```bash
-curl -X POST http://localhost:3003/api/v1.0/auth/verify-otp \
-  -H "Content-Type: application/json" \
-  -d '{\"email\": \"user@example.com\", \"otp\": \"123456\"}'
+{
+  "email": "user@example.com",
+  "otp": "123456"
+}
 ```
 
 **Response:**
 ```json
 {
-  "status": true,
+  "success": true,
   "message": "OTP verified successfully",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
-      "id": "user-id",
-      "email": "user@example.com"
+      "email": "user@example.com",
+      "userId": "123"
     }
   }
 }
 ```
 
-### API Documentation
-- **Swagger UI**: http://localhost:3000/api/v1.0/docs
-- **Swagger JSON**: http://localhost:3000/swagger.json
+### Dynamic API Endpoint
 
-## Request Example
+#### Execute Stored Procedure
+Executes any stored procedure with dynamic parameters.
 
-## Frontend API Call Templates
+```http
+POST /api/v1.0/DynamicApi/DynamicApiExecute
+Content-Type: application/json
+Authorization: Bearer {jwt_token}
 
-### React Example (axios)
-
-```jsx
-// src/apiCall.js
-import axios from 'axios';
-
-export async function callDynamicApi() {
-  const response = await axios.post('http://localhost:3000/api/v1.0/DynamicApi/DynamicApiExecute', {
-    stringOne: 'p_ContactId=5|p_Status=Active',
-    stringTwo: '|',
-    stringThree: '=',
-    stringFour: 'SP_GetContactData'
-  });
-  return response.data;
+{
+  "stringOne": "productId=1|userId=5",
+  "stringTwo": "|",
+  "stringThree": "=",
+  "stringFour": "SP_GetProducts"
 }
 ```
 
-### Angular Example (HttpClient)
+**Parameters:**
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `stringOne` | string | Key-value pairs (format: `key1=val1<sep>key2=val2`) | Required |
+| `stringTwo` | string | Parameter separator | `\|` |
+| `stringThree` | string | Key-value separator | `=` |
+| `stringFour` | string | Stored Procedure name | Required |
 
-```typescript
-// src/app/api.service.ts
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-@Injectable({ providedIn: 'root' })
-export class ApiService {
-  constructor(private http: HttpClient) {}
-
-  callDynamicApi(): Observable<any> {
-    return this.http.post('http://localhost:3000/api/v1.0/DynamicApi/DynamicApiExecute', {
-      stringOne: 'p_ContactId=5|p_Status=Active',
-      stringTwo: '|',
-      stringThree: '=',
-      stringFour: 'SP_GetContactData'
-    });
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Procedure executed successfully",
+  "data": {
+    "results": [...procedure results...],
+    "executionTime": 45
   }
 }
 ```
 
-### Using curl
+### System Endpoints
+
+#### Health Check
+```http
+GET /health
+```
+
+**Response:**
+```json
+{
+  "status": "OK",
+  "timestamp": "2024-06-15T10:30:00Z"
+}
+```
+
+---
+
+## 📂 Project Structure
+
+```
+DynamicApi-Express-MYSQL/
+├── src/
+│   ├── index.js                           # Main server entry point
+│   │                                      # Middleware setup, DB config, server startup
+│   │
+│   ├── config/
+│   │   ├── database.js                   # MySQL connection pool setup
+│   │   └── swagger.js                    # Swagger/OpenAPI documentation config
+│   │
+│   ├── routes/
+│   │   ├── apiRoutes.js                  # API endpoint definitions
+│   │   │                                 # Dynamic API and other endpoints
+│   │   └── authRoutes.js                 # Authentication (OTP/JWT) routes
+│   │
+│   ├── controllers/
+│   │   └── dynamicApiController.js       # HTTP request/response handlers
+│   │                                     # Input validation, service invocation
+│   │
+│   ├── services/
+│   │   ├── dynamicApiService.js          # Business logic orchestration
+│   │   │                                 # Parameter parsing, execution tracking
+│   │   ├── storedProcedureExecutor.js    # Direct MySQL procedure execution
+│   │   │                                 # Parameterized queries, result processing
+│   │   ├── transactionExecutor.js        # Multi-statement transaction support
+│   │   ├── procedureMetadataExtractor.js # Extract procedure info from DB
+│   │   └── emailService.js               # Email/OTP sending via Nodemailer
+│   │
+│   ├── middleware/
+│   │   ├── auth.js                       # JWT verification middleware
+│   │   │                                 # Token validation, user context
+│   │   └── errorHandler.js               # Global error handling
+│   │                                     # 404, exception catching, response formatting
+│   │
+│   ├── utils/
+│   │   ├── logger.js                     # Logging utility
+│   │   │                                 # Info, error, warn, debug levels
+│   │   └── procedurePayloadGenerator.js  # Dynamic payload construction
+│   │
+│   └── worker.js                         # Cloudflare Workers adapter (optional)
+│
+├── database/
+│   └── setup.sql                         # Database schema and tables
+│
+├── .env                                  # Environment variables (gitignored)
+├── .env.example                          # Environment template
+├── package.json                          # Dependencies and scripts
+├── package-lock.json                     # Locked dependency versions
+├── wrangler.toml                         # Cloudflare Workers config (optional)
+├── worker.js                             # Cloudflare Workers deployment (optional)
+├── .gitignore                            # Git ignore rules
+└── README.md                             # This file
+```
+
+---
+
+## 🏗️ Architecture
+
+### Layered Architecture (Enterprise Pattern)
+
+```
+┌─────────────────────────────────────────┐
+│   HTTP Layer (Express App)              │
+│   - Middleware setup                    │
+│   - CORS, JSON parsing                  │
+│   - Database pools                      │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   Routes Layer                          │
+│   - Endpoint definitions                │
+│   - JSDoc/Swagger docs                  │
+│   - Route-to-controller mapping         │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   Controllers Layer                     │
+│   - HTTP request handling               │
+│   - Input validation                    │
+│   - Service invocation                  │
+│   - Response formatting                 │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   Services Layer                        │
+│   - Business logic                      │
+│   - Parameter parsing                   │
+│   - Execution tracking                  │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│   Database Layer                        │
+│   - MySQL operations                    │
+│   - Parameterized queries               │
+│   - Transaction management              │
+└─────────────────────────────────────────┘
+
+Supported by:
+├── Middleware Layer (Auth, Error handling)
+└── Utilities Layer (Logging, Helpers)
+```
+
+---
+
+## 🔐 Security Features
+
+### SQL Injection Prevention
+- ✅ Parameterized queries using `?` placeholders
+- ✅ No string concatenation in queries
+- ✅ Input validation before execution
+
+### Authentication
+- ✅ JWT token-based auth
+- ✅ Email OTP verification
+- ✅ Token expiry (24 hours default)
+- ✅ Secure token storage
+
+### Password Security
+- ✅ bcryptjs hashing (10 salt rounds)
+- ✅ Never store plain passwords
+- ✅ Always hash before storing
+
+### CORS Protection
+- ✅ Configurable origin whitelist
+- ✅ Credentials support
+- ✅ Method restrictions (GET, POST, OPTIONS)
+- ✅ Header validation
+
+### Data Protection
+- ✅ Environment variable usage
+- ✅ Secrets never in code
+- ✅ Production config separation
+
+---
+
+## 🗄️ Database Schema
+
+### Key Tables
+- **Users** - User accounts, emails, password hashes
+- **ExecutionLogs** - API call audit trail
+- **Products** - Jewellery items, prices, inventory
+- **Orders** - Customer orders, totals, status
+- **OrderItems** - Individual items in orders
+- **Cart** - Shopping cart items per user
+- **Wishlist** - Saved products per user
+- **Categories** - Product categories
+- **Coupons** - Discount codes
+
+### Connection Pool Settings
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| Connection Limit | 10 | Max concurrent connections |
+| Queue Limit | 0 | Unlimited queued requests |
+| Wait for Connections | true | Wait when pool exhausted |
+| Enable Keep Alive | true | Prevent connection timeout |
+
+---
+
+## 📋 Example: Adding a New Stored Procedure
+
+### 1. Create in MySQL
+```sql
+CREATE PROCEDURE SP_GetCustomerOrders(
+    IN p_customerId INT
+)
+BEGIN
+    SELECT * FROM Orders WHERE CustomerId = p_customerId;
+END;
+```
+
+### 2. Call via API
 ```bash
-curl -X POST http://localhost:3000/api/v1.0/DynamicApi/DynamicApiExecute \
+curl -X POST http://localhost:3001/api/v1.0/DynamicApi/DynamicApiExecute \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
-    "stringOne": "p_ProductId=1|p_Category=Electronics",
+    "stringOne": "customerId=123",
     "stringTwo": "|",
     "stringThree": "=",
-    "stringFour": "GetProductById"
+    "stringFour": "SP_GetCustomerOrders"
   }'
 ```
 
-### Response Example
-```json
-{
-  "status": true,
-  "message": "Success",
-  "data": [
-    {
-      "ProductId": 1,
-      "ProductName": "Laptop",
-      "Price": 50000
-    }
-  ]
-}
+---
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+npm test
 ```
 
-## Environment Variables
+### Manual API Testing with Postman
+1. Import the OpenAPI spec from `/swagger.json`
+2. Set `Authorization` header with JWT token
+3. Test endpoints in Swagger UI or Postman
+4. Check responses and execution logs
 
-### Required
-```
-DB_HOST=127.0.0.1          # MySQL host
-DB_PORT=3306               # MySQL port
-DB_NAME=DynamicApiDb       # Database name
-DB_USER=root               # MySQL user
-DB_PASSWORD=123456         # MySQL password
-```
+---
 
-### Optional
-```
-PORT=3000                  # Server port (default: 3000)
-NODE_ENV=development       # Environment (development/production)
-```
+## 📊 Performance Optimization
 
-## Key Features
+### Connection Pooling
+- Reuses 10 MySQL connections
+- Automatic reconnection on failure
+- Prevents connection exhaustion
 
-- ✅ Dynamic stored procedure execution
-- ✅ Custom parameter separators
-- ✅ Parameterized queries (SQL injection safe)
-- ✅ Execution logging to database
-- ✅ Execution time tracking
-- ✅ Comprehensive error handling
-- ✅ Swagger/OpenAPI documentation
-- ✅ Health check endpoint
-- ✅ CORS enabled
-- ✅ Layered architecture
-- ✅ No authentication required
+### Async/Await
+- Non-blocking operations
+- Efficient resource usage
+- Better error handling
 
-## Documentation
+### Logging
+- Minimal performance impact
+- Structured logging format
+- Easy debugging and monitoring
 
-For detailed information, see [documentation.md](./documentation.md) which includes:
-- Complete setup instructions for Windows, macOS, Linux
-- Architecture overview
-- How to extend the application
-- Production deployment guide
-- Troubleshooting guide
-- Operational considerations
+### Query Optimization
+- Parameterized queries (query caching)
+- Connection pooling
+- Efficient result processing
 
-## Security Notes
+---
 
-- ⚠️ No authentication is enforced (designed for internal APIs only)
-- ✅ Parameterized queries prevent SQL injection
-- ✅ Input validation on procedure names
-- ✅ CORS configured
-- ⚠️ Not recommended for public-facing APIs without adding authentication
+## 🚢 Deployment Guide
 
-## Architecture Benefits
+### Production Environment Setup
 
-- **Separation of Concerns**: Each layer has a single responsibility
-- **Testability**: Components can be tested independently
-- **Maintainability**: Clear code organization
-- **Scalability**: Easy to add new features
-- **Reusability**: Utilities and services are reusable
-- **Error Handling**: Centralized error management
+1. **Update `.env` for production**
+   ```env
+   NODE_ENV=production
+   PORT=3001
+   DB_HOST=prod-db-host
+   DB_USER=prod_user
+   DB_PASSWORD=secure_password_here
+   JWT_SECRET=production_secret_key
+   CORS_ORIGINS=https://yourdomain.com
+   ```
 
-## Troubleshooting
+2. **Install globally with PM2 (for process management)**
+   ```bash
+   npm install -g pm2
+   pm2 start src/index.js --name "mystjewel-api"
+   pm2 save
+   ```
 
-### Server won't start
-- Check if port 3000 is already in use
-- Verify Node.js is installed: `node --version`
-- Verify npm packages installed: `npm list`
+3. **Setup with Docker**
+   ```bash
+   docker build -t mystjewel-api .
+   docker run -p 3001:3001 --env-file .env mystjewel-api
+   ```
 
-### Database connection error
-- Verify MySQL is running
-- Check .env credentials match your MySQL setup
-- Ensure database exists: `SHOW DATABASES;`
+### Deployment Platforms
 
-### Swagger endpoints not showing
-- Restart server after code changes
-- Check src/routes/apiRoutes.js has Swagger comments
-- Verify swagger.js points to correct files
-
-## License
-MIT
-
-## Contact
-For support or questions, contact: support@example.com
-
-DB_PASSWORD=123456
-DB_NAME=DynamicApiDb
-JWT_SECRET=your_secret_key
-NODE_ENV=development
+#### Heroku
+```bash
+heroku create mystjewel-api
+git push heroku main
 ```
 
-## Documentation
-- API Documentation: `http://localhost:3000/api-docs`
-- Database Schema: See `database/` folder
+#### AWS EC2
+```bash
+npm install -g pm2
+pm2 start src/index.js --name "api"
+pm2 startup
+```
 
-## License
-MIT
+#### DigitalOcean App Platform
+Push to GitHub and connect repository in App Platform dashboard.
+
+---
+
+## 🐛 Troubleshooting
+
+### Issue: Database Connection Refused
+```bash
+# Check MySQL is running
+mysql -u root -p
+# Verify credentials in .env
+# Ensure database exists: CREATE DATABASE DynamicApiDb;
+```
+
+### Issue: OTP Email Not Sending
+```bash
+# Enable Gmail Less Secure App Access OR use App Password
+# Verify EMAIL_USER and EMAIL_PASSWORD in .env
+# Check Nodemailer logs
+```
+
+### Issue: CORS Error
+```bash
+# Add your frontend URL to CORS_ORIGINS in .env
+CORS_ORIGINS=http://localhost:5173,https://yourdomain.com
+# Restart server
+npm run dev
+```
+
+### Issue: Port Already in Use
+```bash
+# Use different port
+PORT=3002 npm run dev
+
+# Or kill existing process
+# Windows: netstat -ano | findstr :3001
+# Mac/Linux: lsof -i :3001 | kill -9 <PID>
+```
+
+### Issue: JWT Token Expired
+```bash
+# User needs to request new OTP and get new token
+# Tokens expire after JWT_EXPIRY duration (default: 24h)
+```
+
+---
+
+## 📝 Environment Variables Reference
+
+```env
+# Database
+DB_HOST=127.0.0.1              # MySQL host
+DB_PORT=3306                   # MySQL port
+DB_USER=root                   # MySQL user
+DB_PASSWORD=123456             # MySQL password
+DB_NAME=DynamicApiDb           # Database name
+
+# Email (Gmail)
+EMAIL_SERVICE=gmail            # Email service
+EMAIL_USER=your@gmail.com      # Gmail address
+EMAIL_PASSWORD=app_password    # Gmail app password
+
+# JWT
+JWT_SECRET=secure_secret       # JWT signing secret
+JWT_EXPIRY=24h                 # Token expiry
+
+# CORS
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Server
+PORT=3001                      # Server port
+NODE_ENV=development           # development/production
+```
+
+---
+
+## 📖 Further Documentation
+
+- **Database Schema**: See `database/setup.sql`
+- **API Examples**: Check Swagger UI at `/api/v1.0/docs`
+- **Frontend Integration**: See `../mystic-jewel/README.md`
+
+---
+
+## 📄 License
+
+MIT License - Feel free to use this project for your needs.
+
+---
+
+## 👥 Support
+
+For issues, questions, or feature requests:
+1. Check existing documentation
+2. Review error logs for debugging
+3. Check `.env` configuration
+4. Visit Swagger UI for endpoint docs
+5. Create an issue on the repository
+
+---
+
+**Happy coding! 🚀**

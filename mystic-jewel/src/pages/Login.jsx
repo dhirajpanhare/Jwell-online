@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, AlertCircle } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, AlertCircle, ArrowRight, AlertTriangle } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/states/LoadingState';
 import { ErrorAlert } from '../components/states/ErrorState';
@@ -11,6 +11,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [demoMode, setDemoMode] = useState(false);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,7 +39,31 @@ const Login = () => {
       setTimeout(() => {
         navigate('/verify-otp', { state: { email } });
       }, 1500);
+    } else if (result.error && result.error.includes('Network')) {
+      // Auto-enable demo mode on network error
+      setDemoMode(true);
     }
+  };
+
+  const handleDemoLogin = (e) => {
+    e.preventDefault();
+    setEmailError('');
+    setSuccessMessage('');
+
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+
+    setSuccessMessage('Demo mode: OTP sent successfully! Proceeding to verification...');
+    setTimeout(() => {
+      navigate('/verify-otp', { state: { email, demoMode: true } });
+    }, 1500);
   };
 
   return (
@@ -53,8 +78,19 @@ const Login = () => {
           </div>
 
           {/* Error Alert */}
-          {error && (
+          {error && !demoMode && (
             <ErrorAlert message={error} dismissible={false} />
+          )}
+
+          {/* Demo Mode Alert */}
+          {demoMode && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-blue-900 font-semibold">Demo Mode Active</p>
+                <p className="text-blue-800 text-sm mt-1">Backend not running. Using demo verification.</p>
+              </div>
+            </div>
           )}
 
           {/* Success Message */}
@@ -65,7 +101,7 @@ const Login = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSendOTP} className="space-y-6">
+          <form onSubmit={demoMode ? handleDemoLogin : handleSendOTP} className="space-y-6">
             {/* Email Input */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -100,7 +136,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading || otpSent}
-              className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full bg-teal text-white py-3 px-4 rounded-lg hover:bg-teal/90 active:bg-teal/95 transition-all duration-200 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
               {isLoading ? (
                 <>
@@ -108,10 +144,31 @@ const Login = () => {
                   <span>Sending OTP...</span>
                 </>
               ) : (
-                'Send OTP'
+                <>
+                  Send OTP
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* Create Account Link */}
+          <p className="text-center text-gray-600 text-sm mb-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-teal font-semibold hover:underline">
+              Create one here
+            </Link>
+          </p>
 
           {/* Info */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">

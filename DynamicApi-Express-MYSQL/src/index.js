@@ -24,6 +24,7 @@ const DynamicApiController = require('./controllers/dynamicApiController');
 // Import routes
 const { registerApiRoutes } = require('./routes/apiRoutes');
 const authRoutes = require('./routes/authRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 // Import middleware
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
@@ -135,6 +136,9 @@ registerApiRoutes(apiRouter, dynamicApiController);
 
 // Mount auth routes
 app.use('/api/v1.0/auth', authRoutes);
+
+// Mount upload routes
+app.use('/api/v1.0/upload', uploadRoutes);
 
 // Mount router
 app.use(apiRouter);

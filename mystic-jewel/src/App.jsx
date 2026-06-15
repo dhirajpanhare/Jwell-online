@@ -17,7 +17,9 @@ const ProductList = lazy(() => import('./pages/ProductList'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
 const VerifyOTP = lazy(() => import('./pages/VerifyOTP'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 // Full page loading skeleton
 const PageLoader = () => (
@@ -46,6 +48,7 @@ function App() {
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
                     <Route path="/verify-otp" element={<VerifyOTP />} />
 
                     {/* Protected Routes */}
@@ -57,6 +60,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <Wishlist />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
                         </ProtectedRoute>
                       }
                     />
