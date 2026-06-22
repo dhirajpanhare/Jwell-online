@@ -3,11 +3,12 @@
  * Example:
  *   buildProcedurePayload('SP_GetProductDetails', {
  *     p_ProductId: 1,
- *     p_CategoryId: 2
+ *     p_CategoryId: 2,
+ *     p_Name: null  // Will be filtered out
  *   })
  *   Returns:
  *   {
- *     stringOne: "p_ProductId=1|p_CategoryId=2",
+ *     stringOne: "p_ProductId=1|p_CategoryId=2",  // Note: null values excluded
  *     stringTwo: "|",
  *     stringThree: "=",
  *     stringFour: "SP_GetProductDetails"
@@ -20,8 +21,26 @@ export const buildProcedurePayload = (
   keyValueSeparator = '='
 ) => {
   // Build parameter string from params object
+  // Only include non-null and non-undefined values
   const paramString = Object.entries(params)
-    .map(([key, value]) => `${key}${keyValueSeparator}${value}`)
+    .filter(([_, value]) => value !== null && value !== undefined)  // Filter out null/undefined
+    .map(([key, value]) => {
+      // Handle different data types properly
+      let paramValue = value;
+      
+      if (typeof value === 'boolean') {
+        paramValue = value ? 1 : 0;  // Convert boolean to 1/0 for MySQL
+      } else if (typeof value === 'number') {
+        paramValue = value;  // Numbers as-is
+      } else if (typeof value === 'string') {
+        // Escape quotes in strings
+        paramValue = value.replace(/"/g, '\\"');
+      } else {
+        paramValue = String(value);
+      }
+      
+      return `${key}${keyValueSeparator}${paramValue}`;
+    })
     .join(paramSeparator);
 
   return {
@@ -38,9 +57,11 @@ export const buildProcedurePayload = (
  */
 export const buildQueryParams = (params = {}) => {
   const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    query.append(key, value);
-  });
+  Object.entries(params)
+    .filter(([_, value]) => value !== null && value !== undefined)  // Filter out null/undefined
+    .forEach(([key, value]) => {
+      query.append(key, value);
+    });
   return query.toString();
 };
 

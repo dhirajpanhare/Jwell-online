@@ -49,28 +49,19 @@ export const useWishlist = () => {
 
   const toggleWishlist = useCallback(
     async (product) => {
-      const exists = wishlistItems.find(item => item.id === product.id);
+      const productId = product.ProductId || product.id;
+      const exists = wishlistItems.find(item => (item.ProductId || item.id) === productId);
 
       if (exists) {
         if (isAuthenticated) {
-          try {
-            await removeFromWishlist(product.id);
-          } catch (err) {
-            setError(err.message || 'Failed to remove from wishlist');
-            return;
-          }
+          try { await removeFromWishlist(productId); } catch (err) { setError(err.message); return; }
         }
-        setWishlistItems(prev => prev.filter(item => item.id !== product.id));
+        setWishlistItems(prev => prev.filter(item => (item.ProductId || item.id) !== productId));
       } else {
         if (isAuthenticated) {
-          try {
-            await addToWishlist(product.id);
-          } catch (err) {
-            setError(err.message || 'Failed to add to wishlist');
-            return;
-          }
+          try { await addToWishlist(productId); } catch (err) { setError(err.message); return; }
         }
-        setWishlistItems(prev => [...prev, product]);
+        setWishlistItems(prev => [...prev, { ...product, id: productId }]);
       }
     },
     [wishlistItems, isAuthenticated]
@@ -78,18 +69,13 @@ export const useWishlist = () => {
 
   const addToWishlistItem = useCallback(
     async (product) => {
-      const exists = wishlistItems.find(item => item.id === product.id);
+      const productId = product.ProductId || product.id;
+      const exists = wishlistItems.find(item => (item.ProductId || item.id) === productId);
       if (exists) return;
-
       if (isAuthenticated) {
-        try {
-          await addToWishlist(product.id);
-        } catch (err) {
-          setError(err.message || 'Failed to add to wishlist');
-          return;
-        }
+        try { await addToWishlist(productId); } catch (err) { setError(err.message); return; }
       }
-      setWishlistItems(prev => [...prev, product]);
+      setWishlistItems(prev => [...prev, { ...product, id: productId }]);
     },
     [wishlistItems, isAuthenticated]
   );
@@ -97,22 +83,15 @@ export const useWishlist = () => {
   const removeFromWishlistItem = useCallback(
     async (productId) => {
       if (isAuthenticated) {
-        try {
-          await removeFromWishlist(productId);
-        } catch (err) {
-          setError(err.message || 'Failed to remove from wishlist');
-          return;
-        }
+        try { await removeFromWishlist(productId); } catch (err) { setError(err.message); return; }
       }
-      setWishlistItems(prev => prev.filter(item => item.id !== productId));
+      setWishlistItems(prev => prev.filter(item => (item.ProductId || item.id) !== productId));
     },
     [isAuthenticated]
   );
 
   const isInWishlist = useCallback(
-    (productId) => {
-      return wishlistItems.some(item => item.id === productId);
-    },
+    (productId) => wishlistItems.some(item => (item.ProductId || item.id) === productId),
     [wishlistItems]
   );
 

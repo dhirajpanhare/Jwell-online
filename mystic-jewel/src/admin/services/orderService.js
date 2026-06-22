@@ -1,7 +1,13 @@
 import { executeProcedure } from '../api/dynamicApi';
 
 export const getOrders = async (filters = {}) => {
-  const result = await executeProcedure('SP_OrderList', filters);
+  const result = await executeProcedure('SP_OrderList', {
+    p_Status: filters.status || null,
+    p_StartDate: filters.startDate || null,
+    p_EndDate: filters.endDate || null,
+    p_Page: filters.page || 1,
+    p_Limit: filters.limit || 20,
+  });
   return Array.isArray(result) ? result : [];
 };
 

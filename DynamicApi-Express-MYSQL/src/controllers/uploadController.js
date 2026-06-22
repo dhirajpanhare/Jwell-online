@@ -244,7 +244,7 @@ const getMetadata = async (req, res) => {
 const getStorageStats = async (req, res) => {
   try {
     // Admin only
-    if (req.user?.Role !== 'admin') {
+    if (req.user?.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied',

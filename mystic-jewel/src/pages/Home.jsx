@@ -99,25 +99,28 @@ const Home = () => {
             </div>
           ) : categories.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  to={`/products?category=${encodeURIComponent(category.name)}`}
-                  className="group text-center"
-                >
-                  <div className="aspect-square rounded-full overflow-hidden mb-4 card-shadow">
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  <h3 className="font-semibold text-lg group-hover:text-teal transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">{category.count} items</p>
-                </Link>
-              ))}
+              {categories.map((category) => {
+                const catId = category.CategoryId || category.id;
+                const catName = category.CategoryName || category.name || '';
+                const catImage = category.ImageUrl || category.image || 'https://via.placeholder.com/200x200?text=' + catName;
+                return (
+                  <Link
+                    key={catId}
+                    to={`/products?category=${encodeURIComponent(catName)}`}
+                    className="group text-center"
+                  >
+                    <div className="aspect-square rounded-full overflow-hidden mb-4 card-shadow bg-gray-100">
+                      <img
+                        src={catImage}
+                        alt={catName}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={e => { e.target.src = 'https://via.placeholder.com/200x200?text=' + catName; }}
+                      />
+                    </div>
+                    <h3 className="font-semibold text-lg group-hover:text-teal transition-colors">{catName}</h3>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center text-gray-600">
@@ -152,7 +155,7 @@ const Home = () => {
           ) : bestSellers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {bestSellers.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.ProductId || product.id} product={product} />
               ))}
             </div>
           ) : (

@@ -3,7 +3,7 @@ import useWishlistHook from '../hooks/useWishlist';
 
 const WishlistContext = createContext();
 
-export const useWishlistContext = () => {
+const useWishlistContext = () => {
   const context = useContext(WishlistContext);
   if (!context) {
     throw new Error('useWishlistContext must be used within WishlistProvider');
@@ -11,12 +11,10 @@ export const useWishlistContext = () => {
   return context;
 };
 
-// Keep useWishlist as an alias for backward compatibility (though it conflicts with hook name)
-export const useWishlist = () => {
-  return useWishlistContext();
-};
+// Keep useWishlist as an alias for backward compatibility
+export const useWishlist = useWishlistContext;
 
-export const WishlistProvider = ({ children }) => {
+export function WishlistProvider({ children }) {
   const wishlist = useWishlistHook();
 
   return (
@@ -35,4 +33,4 @@ export const WishlistProvider = ({ children }) => {
       {children}
     </WishlistContext.Provider>
   );
-};
+}

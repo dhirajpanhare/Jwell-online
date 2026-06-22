@@ -1,45 +1,28 @@
 import axios from 'axios';
+import { getAuthToken } from '../../api/authApi';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor - Attach JWT token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminAuthToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    const token = getAuthToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor - Handle errors
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401) {
-      localStorage.removeItem('adminAuthToken');
-      localStorage.removeItem('adminUser');
-      window.location.href = '/admin/login';
+    if ((error.response?.status === 401 || error.response?.status === 403)
+        && window.location.pathname.startsWith('/admin')) {
+      window.location.href = '/login';
     }
-
-    // Handle network errors
-    if (!error.response) {
-      console.error('Network error:', error.message);
-    }
-
     return Promise.reject(error);
   }
 );

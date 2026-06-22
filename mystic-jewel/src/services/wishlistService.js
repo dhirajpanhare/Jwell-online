@@ -1,5 +1,5 @@
-import { executeProcedure } from '../api/dynamicApi';
-import { getAuthToken } from '../api/authApi';
+import { wishlistApi } from '../api/dynamicApiService';
+import { getAuthToken, getCurrentUser } from '../api/authApi';
 
 /**
  * Get user's wishlist
@@ -7,16 +7,16 @@ import { getAuthToken } from '../api/authApi';
  */
 export const getWishlist = async () => {
   try {
-    if (!getAuthToken()) {
-      // If not authenticated, return empty array
-      return [];
-    }
+    const token = getAuthToken();
+    if (!token) return [];
 
-    const result = await executeProcedure('SP_GetWishlist', {});
-    return Array.isArray(result) ? result : result?.data || [];
+    const user = getCurrentUser();
+    if (!user) return [];
+
+    const result = await wishlistApi.getWishlist(user.userId);
+    return result.status ? (Array.isArray(result.data) ? result.data : []) : [];
   } catch (error) {
     console.error('Error fetching wishlist:', error);
-    // Return empty array on error instead of throwing
     return [];
   }
 };
@@ -28,13 +28,10 @@ export const getWishlist = async () => {
  */
 export const addToWishlist = async (productId) => {
   try {
-    if (!getAuthToken()) {
-      throw new Error('User must be authenticated to add to wishlist');
-    }
+    const user = getCurrentUser();
+    if (!user) throw new Error('User must be authenticated to add to wishlist');
 
-    const result = await executeProcedure('SP_AddWishlist', {
-      p_ProductId: productId,
-    });
+    const result = await wishlistApi.addWishlist(user.userId, productId);
     return result;
   } catch (error) {
     console.error(`Error adding product ${productId} to wishlist:`, error);
@@ -49,13 +46,10 @@ export const addToWishlist = async (productId) => {
  */
 export const removeFromWishlist = async (productId) => {
   try {
-    if (!getAuthToken()) {
-      throw new Error('User must be authenticated to remove from wishlist');
-    }
+    const user = getCurrentUser();
+    if (!user) throw new Error('User must be authenticated to remove from wishlist');
 
-    const result = await executeProcedure('SP_RemoveWishlist', {
-      p_ProductId: productId,
-    });
+    const result = await wishlistApi.removeWishlist(user.userId, productId);
     return result;
   } catch (error) {
     console.error(`Error removing product ${productId} from wishlist:`, error);

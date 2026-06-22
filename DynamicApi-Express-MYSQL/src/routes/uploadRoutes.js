@@ -6,37 +6,39 @@
 const express = require('express');
 const multer = require('multer');
 const uploadController = require('../controllers/uploadController');
+const { verifyAuth, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Multer configuration
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB
-  },
-  fileFilter: (req, file, cb) => {
-    // Allowed MIME types
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/avif',
-      'video/mp4',
-      'video/avi',
-      'video/quicktime',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
+// File size limits per use-case (bytes)
+const FILE_LIMITS = {
+    category: 3 * 1024 * 1024,   // 3 MB
+    product: 5 * 1024 * 1024,    // 5 MB
+    banner: 10 * 1024 * 1024,    // 10 MB
+    profile: 2 * 1024 * 1024,    // 2 MB
+    default: 10 * 1024 * 1024,   // 10 MB fallback
+};
 
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'), false);
-    }
-  },
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+const ALLOWED_ALL_TYPES = [
+    ...ALLOWED_IMAGE_TYPES,
+    'video/mp4', 'video/avi', 'video/quicktime',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+const makeUpload = (type = 'default', imageOnly = false) => multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: FILE_LIMITS[type] || FILE_LIMITS.default },
+    fileFilter: (req, file, cb) => {
+        const allowed = imageOnly ? ALLOWED_IMAGE_TYPES : ALLOWED_ALL_TYPES;
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error(`Invalid file type. Allowed: ${allowed.join(', ')}`), false);
+        }
+    },
 });
 
 /**
@@ -71,154 +73,15 @@ const upload = multer({
  *       500:
  *         description: Upload failed
  */
-router.post('/', upload.single('file'), uploadController.uploadFile);
-
-/**
- * @swagger
- * /api/v1.0/upload/multiple:
- *   post:
- *     summary: Upload multiple files to Cloudinary
- *     tags: [Upload]
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               files:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *               folder:
- *                 type: string
- *                 default: mystic-jewel/products
- *               resourceType:
- *                 type: string
- *                 default: auto
- *     responses:
- *       200:
- *         description: Files uploaded successfully
- *       400:
- *         description: No files provided or invalid files
- *       500:
- *         description: Upload failed
- */
-router.post('/multiple', upload.array('files', 10), uploadController.uploadMultipleFiles);
-
-/**
- * @swagger
- * /api/v1.0/upload/delete:
- *   post:
- *     summary: Delete file from Cloudinary
- *     tags: [Upload]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               publicId:
- *                 type: string
- *                 required: true
- *     responses:
- *       200:
- *         description: File deleted successfully
- *       400:
- *         description: Public ID is required
- *       500:
- *         description: Deletion failed
- */
-router.post('/delete', uploadController.deleteFile);
-
-/**
- * @swagger
- * /api/v1.0/upload/delete-multiple:
- *   post:
- *     summary: Delete multiple files from Cloudinary
- *     tags: [Upload]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               publicIds:
- *                 type: array
- *                 items:
- *                   type: string
- *                 required: true
- *     responses:
- *       200:
- *         description: Files deleted successfully
- *       400:
- *         description: Public IDs array is required
- *       500:
- *         description: Deletion failed
- */
-router.post('/delete-multiple', uploadController.deleteMultipleFiles);
-
-/**
- * @swagger
- * /api/v1.0/upload/metadata/{publicId}:
- *   get:
- *     summary: Get file metadata from Cloudinary
- *     tags: [Upload]
- *     parameters:
- *       - in: path
- *         name: publicId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: File metadata retrieved
- *       400:
- *         description: Public ID is required
- *       500:
- *         description: Failed to get metadata
- */
-router.get('/metadata/:publicId', uploadController.getMetadata);
-
-/**
- * @swagger
- * /api/v1.0/upload/responsive/{publicId}:
- *   get:
- *     summary: Get responsive image URLs from Cloudinary
- *     tags: [Upload]
- *     parameters:
- *       - in: path
- *         name: publicId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Responsive URLs retrieved
- *       400:
- *         description: Public ID is required
- *       500:
- *         description: Failed to get URLs
- */
-router.get('/responsive/:publicId', uploadController.getResponsiveUrls);
-
-/**
- * @swagger
- * /api/v1.0/upload/stats:
- *   get:
- *     summary: Get Cloudinary storage statistics (Admin only)
- *     tags: [Upload]
- *     responses:
- *       200:
- *         description: Storage statistics retrieved
- *       403:
- *         description: Access denied
- *       500:
- *         description: Failed to get statistics
- */
-router.get('/stats', uploadController.getStorageStats);
+router.post('/', verifyAuth, makeUpload('product', true).single('file'), uploadController.uploadFile);
+router.post('/multiple', verifyAuth, makeUpload('product', true).array('files', 10), uploadController.uploadMultipleFiles);
+router.post('/category', verifyAuth, adminOnly, makeUpload('category', true).single('file'), uploadController.uploadFile);
+router.post('/banner', verifyAuth, adminOnly, makeUpload('banner', true).single('file'), uploadController.uploadFile);
+router.post('/profile', verifyAuth, makeUpload('profile', true).single('file'), uploadController.uploadFile);
+router.post('/delete', verifyAuth, uploadController.deleteFile);
+router.post('/delete-multiple', verifyAuth, uploadController.deleteMultipleFiles);
+router.get('/metadata/:publicId', verifyAuth, uploadController.getMetadata);
+router.get('/responsive/:publicId', verifyAuth, uploadController.getResponsiveUrls);
+router.get('/stats', verifyAuth, adminOnly, uploadController.getStorageStats);
 
 module.exports = router;

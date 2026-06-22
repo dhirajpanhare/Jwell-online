@@ -2,10 +2,9 @@ import axiosInstance from './axiosInstance';
 import { buildProcedurePayload } from './payloadBuilder';
 
 /**
- * Execute a stored procedure through the Dynamic API
- * @param {string} procedureName - Name of stored procedure (e.g., 'SP_ProductList')
- * @param {object} params - Parameters for the procedure
- * @returns {Promise<any>} Response data from API
+ * Execute a stored procedure through the Dynamic API.
+ * The axiosInstance automatically attaches adminAuthToken and
+ * redirects to /admin/login on 401/403.
  */
 export const executeProcedure = async (procedureName, params = {}) => {
   try {
@@ -16,31 +15,27 @@ export const executeProcedure = async (procedureName, params = {}) => {
       payload
     );
 
-    // Handle response format
-    if (response.data?.status === true) {
-      return response.data.data || response.data;
+    // API returned a non-success response body
+    if (response.data?.status === false) {
+      throw new Error(response.data?.message || `Procedure ${procedureName} failed`);
     }
 
-    throw new Error(response.data?.message || 'API request failed');
+    return response.data?.data ?? response.data;
   } catch (error) {
-    console.error(`Error executing procedure ${procedureName}:`, error);
-    throw error;
+    // Re-throw with a cleaner message; axios interceptor handles 401/403 redirect
+    const message = error.response?.data?.message || error.message || `Error calling ${procedureName}`;
+    throw new Error(message);
   }
 };
 
 /**
- * Batch execute multiple procedures
+ * Batch execute multiple procedures in parallel
  */
 export const executeBatchProcedures = async (procedures) => {
-  try {
-    const promises = procedures.map(({ procedureName, params }) =>
-      executeProcedure(procedureName, params)
-    );
-    return await Promise.all(promises);
-  } catch (error) {
-    console.error('Error executing batch procedures:', error);
-    throw error;
-  }
+  const promises = procedures.map(({ procedureName, params }) =>
+    executeProcedure(procedureName, params)
+  );
+  return Promise.all(promises);
 };
 
 export default executeProcedure;

@@ -50,11 +50,14 @@ export const useCart = () => {
 
   const addItem = useCallback(
     async (product, quantity = 1) => {
+      // Support both real API (ProductId) and mock (id)
+      const productId = product.ProductId || product.id;
+
       if (isAuthenticated) {
         setLoading(true);
         setError(null);
         try {
-          await addToCart(product.id, quantity);
+          await addToCart(productId, quantity);
         } catch (err) {
           setError(err.message || 'Failed to add to cart');
           setLoading(false);
@@ -65,15 +68,15 @@ export const useCart = () => {
       }
 
       setCartItems(prev => {
-        const existing = prev.find(item => item.id === product.id);
+        const existing = prev.find(item => (item.ProductId || item.id) === productId);
         if (existing) {
           return prev.map(item =>
-            item.id === product.id
-              ? { ...item, quantity: item.quantity + quantity }
+            (item.ProductId || item.id) === productId
+              ? { ...item, quantity: (item.quantity || item.Quantity || 1) + quantity }
               : item
           );
         }
-        return [...prev, { ...product, quantity }];
+        return [...prev, { ...product, id: productId, quantity }];
       });
     },
     [isAuthenticated]
@@ -86,11 +89,21 @@ export const useCart = () => {
         return;
       }
 
+      // Find the cart item by ProductId to get CartItemId
+      const cartItem = cartItems.find(item => (item.ProductId || item.id) === productId);
+      if (!cartItem) {
+        setError('Item not found in cart');
+        return;
+      }
+
+      const cartItemId = cartItem.CartItemId;
+
       if (isAuthenticated) {
         setLoading(true);
         setError(null);
         try {
-          await updateCartItem(productId, quantity);
+          // Pass CartItemId and quantity to the API
+          await updateCartItem(cartItemId, quantity);
         } catch (err) {
           setError(err.message || 'Failed to update cart');
           setLoading(false);
@@ -102,20 +115,30 @@ export const useCart = () => {
 
       setCartItems(prev =>
         prev.map(item =>
-          item.id === productId ? { ...item, quantity } : item
+          (item.ProductId || item.id) === productId ? { ...item, quantity } : item
         )
       );
     },
-    [isAuthenticated]
+    [isAuthenticated, cartItems]
   );
 
   const removeItem = useCallback(
     async (productId) => {
+      // Find the cart item by ProductId to get CartItemId
+      const cartItem = cartItems.find(item => (item.ProductId || item.id) === productId);
+      if (!cartItem) {
+        setError('Item not found in cart');
+        return;
+      }
+
+      const cartItemId = cartItem.CartItemId;
+
       if (isAuthenticated) {
         setLoading(true);
         setError(null);
         try {
-          await removeFromCart(productId);
+          // Pass CartItemId to the API
+          await removeFromCart(cartItemId);
         } catch (err) {
           setError(err.message || 'Failed to remove from cart');
           setLoading(false);
@@ -125,9 +148,9 @@ export const useCart = () => {
         }
       }
 
-      setCartItems(prev => prev.filter(item => item.id !== productId));
+      setCartItems(prev => prev.filter(item => (item.ProductId || item.id) !== productId));
     },
-    [isAuthenticated]
+    [isAuthenticated, cartItems]
   );
 
   const clearCart = useCallback(async () => {
@@ -149,16 +172,20 @@ export const useCart = () => {
   }, [isAuthenticated]);
 
   const getTotal = useCallback(() => {
-    return cartItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0);
+    return cartItems.reduce((total, item) => {
+      const price = item.Price || item.price || 0;
+      const qty = item.Quantity || item.quantity || 1;
+      return total + price * qty;
+    }, 0);
   }, [cartItems]);
 
   const getCount = useCallback(() => {
-    return cartItems.reduce((count, item) => count + (item.quantity || 1), 0);
+    return cartItems.reduce((count, item) => count + (item.Quantity || item.quantity || 1), 0);
   }, [cartItems]);
 
   const isInCart = useCallback(
     (productId) => {
-      return cartItems.some(item => item.id === productId);
+      return cartItems.some(item => (item.ProductId || item.id) === productId);
     },
     [cartItems]
   );

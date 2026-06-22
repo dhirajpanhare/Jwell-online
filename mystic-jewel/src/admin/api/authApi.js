@@ -1,88 +1,50 @@
 import axiosInstance from './axiosInstance';
+import { setAccessToken, getAuthToken } from '../../api/authApi';
 
 /**
- * Send OTP to admin email
+ * Admin auth uses the same in-memory token store as the main app.
+ * Tokens are NEVER written to localStorage.
  */
+
 export const sendOtp = async (email) => {
-  try {
-    const response = await axiosInstance.post(
-      import.meta.env.VITE_SEND_OTP_ENDPOINT,
-      { email }
-    );
-
-    if (response.data?.status === true) {
-      return response.data;
-    }
-
-    throw new Error(response.data?.message || 'Failed to send OTP');
-  } catch (error) {
-    console.error('Error sending OTP:', error);
-    throw error;
-  }
+  const response = await axiosInstance.post(
+    import.meta.env.VITE_SEND_OTP_ENDPOINT,
+    { email }
+  );
+  if (response.data?.status === true) return response.data;
+  throw new Error(response.data?.message || 'Failed to send OTP');
 };
 
-/**
- * Verify OTP and get JWT token
- */
 export const verifyOtp = async (email, otp) => {
-  try {
-    const response = await axiosInstance.post(
-      import.meta.env.VITE_VERIFY_OTP_ENDPOINT,
-      { email, otp }
-    );
-
-    if (response.data?.status === true) {
-      const { token, user } = response.data.data;
-
-      // Store in admin-specific keys
-      localStorage.setItem('adminAuthToken', token);
-      localStorage.setItem('adminUser', JSON.stringify(user));
-
-      return response.data;
+  const response = await axiosInstance.post(
+    import.meta.env.VITE_VERIFY_EMAIL_OTP_ENDPOINT,
+    { email, otp }
+  );
+  if (response.data?.status === true) {
+    const { token, user } = response.data.data;
+    if (token) setAccessToken(token);
+    if (user) {
+      try { sessionStorage.setItem('adminUser', JSON.stringify(user)); } catch (_) {}
     }
-
-    throw new Error(response.data?.message || 'Failed to verify OTP');
-  } catch (error) {
-    console.error('Error verifying OTP:', error);
-    throw error;
+    return response.data;
   }
+  throw new Error(response.data?.message || 'Failed to verify OTP');
 };
 
-/**
- * Logout admin
- */
 export const adminLogout = () => {
-  localStorage.removeItem('adminAuthToken');
-  localStorage.removeItem('adminUser');
+  setAccessToken(null);
+  try { sessionStorage.removeItem('adminUser'); } catch (_) {}
 };
 
-/**
- * Get current admin user
- */
 export const getAdminUser = () => {
-  const user = localStorage.getItem('adminUser');
-  return user ? JSON.parse(user) : null;
+  try {
+    const raw = sessionStorage.getItem('adminUser');
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) { return null; }
 };
 
-/**
- * Get auth token
- */
-export const getAuthToken = () => {
-  return localStorage.getItem('adminAuthToken');
-};
+export { getAuthToken };
 
-/**
- * Check if admin is authenticated
- */
-export const isAdminAuthenticated = () => {
-  return !!localStorage.getItem('adminAuthToken');
-};
+export const isAdminAuthenticated = () => !!getAuthToken();
 
-export default {
-  sendOtp,
-  verifyOtp,
-  adminLogout,
-  getAdminUser,
-  getAuthToken,
-  isAdminAuthenticated,
-};
+export default { sendOtp, verifyOtp, adminLogout, getAdminUser, getAuthToken, isAdminAuthenticated };

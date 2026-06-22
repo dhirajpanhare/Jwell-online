@@ -93,9 +93,16 @@ export const AdminLogin = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 min-h-[40px]"
           >
-            {isLoading ? <LoadingSpinner /> : 'Send OTP'}
+            {isLoading ? (
+              <>
+                <LoadingSpinner size="sm" inline />
+                <span className="text-white font-semibold whitespace-nowrap">Sending OTP...</span>
+              </>
+            ) : (
+              <span className="text-white font-semibold whitespace-nowrap">Send OTP</span>
+            )}
           </button>
         </form>
 

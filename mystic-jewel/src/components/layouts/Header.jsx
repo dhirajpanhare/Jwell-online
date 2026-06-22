@@ -48,7 +48,7 @@ const Header = ({ onCartOpen }) => {
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <h1 className="text-2xl md:text-3xl font-bold text-maroon">
-              MysticJewel
+              Adaah Jwells
             </h1>
           </Link>
 
@@ -107,6 +107,13 @@ const Header = ({ onCartOpen }) => {
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-offwhite transition-colors"
                       >
                         My Profile
+                      </Link>
+                      <Link
+                        to="/change-password"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-offwhite transition-colors"
+                      >
+                        Change Password
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -215,6 +222,13 @@ const Header = ({ onCartOpen }) => {
                     >
                       <User className="w-5 h-5" />
                       My Profile
+                    </Link>
+                    <Link
+                      to="/change-password"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex text-gray-700 hover:text-teal transition-colors mb-3 items-center gap-2"
+                    >
+                      Change Password
                     </Link>
                     <button
                       onClick={handleLogout}

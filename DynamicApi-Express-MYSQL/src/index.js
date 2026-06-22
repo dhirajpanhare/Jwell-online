@@ -6,6 +6,8 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const swaggerUi = require('swagger-ui-express');
 
@@ -23,8 +25,10 @@ const DynamicApiController = require('./controllers/dynamicApiController');
 
 // Import routes
 const { registerApiRoutes } = require('./routes/apiRoutes');
+const { registerCommonProcedureRoutes } = require('./routes/commonProcedureRoutes');
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // Import middleware
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
@@ -42,9 +46,9 @@ const app = express();
 // MIDDLEWARE SETUP
 // ============================================================================
 
-// Body parser middleware
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ limit: '100mb', extended: true }));
+// Body parser middleware - limit reduced to prevent DoS
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // CORS middleware - Allow only specific origins
 const corsOrigins = process.env.CORS_ORIGINS 
@@ -61,6 +65,75 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// ============================================================================
+// SECURITY MIDDLEWARE
+// ============================================================================
+
+// Helmet — security headers (CSP, HSTS, XSS, NoSniff, FrameGuard, etc.)
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameSrc: ["'none'"],
+        },
+    },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    xssFilter: true,
+    noSniff: true,
+    frameguard: { action: 'deny' },
+}));
+
+// HTTPS redirect in production
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            return res.redirect(301, `https://${req.header('host')}${req.url}`);
+        }
+        next();
+    });
+}
+
+// Global API rate limit — 200 req / 15 min per IP
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { status: false, message: 'Too many requests, please try again later.' },
+});
+app.use('/api', globalLimiter);
+
+// Auth-specific rate limits
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { status: false, message: 'Too many login attempts, please try again in 15 minutes.' },
+});
+const otpLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 5,
+    message: { status: false, message: 'Too many OTP requests, please try again later.' },
+});
+const paymentLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    message: { status: false, message: 'Too many payment requests, please slow down.' },
+});
+
+// Apply specific limiters on routes below (after route mounts)
+app.use('/api/v1.0/auth/login', loginLimiter);
+app.use('/api/v1.0/auth/send-otp', otpLimiter);
+app.use('/api/v1.0/auth/resend-otp', otpLimiter);
+app.use('/api/v1.0/auth/forgot-password', otpLimiter);
+app.use('/api/v1.0/payments/create-order', paymentLimiter);
+
 // Initialize email service
 initializeEmailService();
 // ============================================================================
@@ -71,7 +144,7 @@ initializeEmailService();
 const pool = mysql.createPool({
     host: process.env.DB_HOST || '127.0.0.1',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '123456',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'DynamicApiDb',
     waitForConnections: true,
     connectionLimit: 10,
@@ -134,14 +207,41 @@ const apiRouter = express.Router();
 // Register all API routes
 registerApiRoutes(apiRouter, dynamicApiController);
 
+// Register common procedure routes (cart, wishlist, categories, testimonials)
+registerCommonProcedureRoutes(apiRouter, dynamicApiService);
+
 // Mount auth routes
 app.use('/api/v1.0/auth', authRoutes);
 
 // Mount upload routes
 app.use('/api/v1.0/upload', uploadRoutes);
 
+// Mount payment routes
+app.use('/api/v1.0/payments', paymentRoutes);
+
 // Mount router
 app.use(apiRouter);
+
+// ============================================================================
+// HEALTH / READINESS / LIVENESS ENDPOINTS
+// ============================================================================
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
+});
+
+app.get('/api/ready', async (req, res) => {
+    try {
+        await pool.query('SELECT 1');
+        res.json({ status: 'ready', db: 'connected', timestamp: new Date().toISOString() });
+    } catch (err) {
+        res.status(503).json({ status: 'not ready', db: 'disconnected', error: err.message });
+    }
+});
+
+app.get('/api/live', (req, res) => {
+    res.json({ status: 'alive', pid: process.pid, timestamp: new Date().toISOString() });
+});
 
 // ============================================================================
 // ERROR HANDLING

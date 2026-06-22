@@ -41,9 +41,12 @@ const http = require('http');
 const logger = require('../utils/logger');
 
 function extractToken(req) {
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7).trim();
-    return null;
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return null;
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim() || null;
+  }
+  return null;
 }
 
 function isValidStaticToken(token) {
@@ -53,12 +56,20 @@ function isValidStaticToken(token) {
 }
 
 function verifyJwt(token) {
-    const raw = process.env.JWT_SECRETS || process.env.JWT_SECRET || '';
-    const secrets = raw.split(',').map(s => s.trim()).filter(Boolean);
-    for (const secret of secrets) {
-        try { return jwt.verify(token, secret); } catch (e) { /* try next */ }
-    }
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    logger.error('AUTH | JWT_SECRET environment variable is not set');
     return null;
+  }
+
+  try {
+    const payload = jwt.verify(token, secret);
+    logger.info(`AUTH | ✅ JWT verified successfully - User ID: ${payload.id}`);
+    return payload;
+  } catch (e) {
+    logger.error(`AUTH | JWT verification FAILED: ${e.message}`);
+    return null;
+  }
 }
 
 async function callAuthService(token) {
@@ -137,4 +148,52 @@ const authenticate = async (req, res, next) => {
     return res.status(500).json({ status: false, message: 'Server authentication misconfiguration', data: null });
 };
 
-module.exports = { authenticate };
+/**
+ * JWT verification middleware for protected routes
+ */
+const verifyAuth = (req, res, next) => {
+  try {
+    const token = extractToken(req);
+
+    if (!token) {
+      return res.status(401).json({
+        status: false,
+        message: 'Unauthorized - Token required',
+      });
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      logger.error('AUTH | JWT_SECRET is not configured');
+      return res.status(500).json({ status: false, message: 'Server authentication misconfiguration' });
+    }
+
+    const decoded = jwt.verify(token, secret);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    logger.error('[Auth Verify Error]', error.message);
+    res.status(401).json({
+      status: false,
+      message: 'Unauthorized - Invalid or expired token',
+    });
+  }
+};
+
+module.exports = { authenticate, verifyAuth };
+
+/**
+ * Admin-only middleware — must be used AFTER verifyAuth
+ */
+const adminOnly = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ status: false, message: 'Unauthorized' });
+    }
+    if (req.user.role !== 'admin') {
+        logger.warn(`[AUTH] Admin access denied for userId:${req.user.id} role:${req.user.role}`);
+        return res.status(403).json({ status: false, message: 'Forbidden — admin access required' });
+    }
+    next();
+};
+
+module.exports = { authenticate, verifyAuth, adminOnly };

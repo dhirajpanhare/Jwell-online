@@ -1,5 +1,5 @@
-import { executeProcedure } from '../api/dynamicApi';
-import { getAuthToken } from '../api/authApi';
+import { orderApi } from '../api/dynamicApiService';
+import { getAuthToken, getCurrentUser } from '../api/authApi';
 
 /**
  * Create a new order
@@ -8,18 +8,22 @@ import { getAuthToken } from '../api/authApi';
  */
 export const createOrder = async (orderData) => {
   try {
-    if (!getAuthToken()) {
-      throw new Error('User must be authenticated to create order');
-    }
+    const user = getCurrentUser();
+    if (!user) throw new Error('User must be authenticated to create order');
 
-    const result = await executeProcedure('SP_CreateOrder', {
-      p_ShippingAddress: orderData.shippingAddress,
-      p_ShippingCity: orderData.shippingCity,
-      p_ShippingState: orderData.shippingState,
-      p_ShippingZipCode: orderData.shippingZipCode,
-      p_PaymentMethod: orderData.paymentMethod,
-      p_Notes: orderData.notes || '',
-    });
+    const shippingDetails = {
+      address: orderData.shippingAddress,
+      city: orderData.shippingCity,
+      state: orderData.shippingState,
+      zipCode: orderData.shippingZipCode
+    };
+
+    const result = await orderApi.createOrder(
+      user.userId,
+      shippingDetails,
+      orderData.paymentMethod,
+      orderData.notes || ''
+    );
     return result;
   } catch (error) {
     console.error('Error creating order:', error);
@@ -29,25 +33,21 @@ export const createOrder = async (orderData) => {
 
 /**
  * Get user's orders
- * @param {object} filters - Filter options (status, startDate, endDate, etc.)
+ * @param {object} filters - Filter options (status, page, limit, etc.)
  * @returns {Promise<Array>} Array of orders
  */
 export const getOrders = async (filters = {}) => {
   try {
-    if (!getAuthToken()) {
-      throw new Error('User must be authenticated to view orders');
-    }
+    const user = getCurrentUser();
+    if (!user) throw new Error('User must be authenticated to view orders');
 
-    const params = {
-      ...(filters.status && { p_Status: filters.status }),
-      ...(filters.startDate && { p_StartDate: filters.startDate }),
-      ...(filters.endDate && { p_EndDate: filters.endDate }),
-      ...(filters.page && { p_Page: filters.page }),
-      ...(filters.limit && { p_Limit: filters.limit }),
-    };
-
-    const result = await executeProcedure('SP_GetOrders', params);
-    return Array.isArray(result) ? result : result?.data || [];
+    const result = await orderApi.getOrders(
+      user.userId,
+      filters.status || null,
+      filters.page || 1,
+      filters.limit || 10
+    );
+    return result.status ? (Array.isArray(result.data) ? result.data : []) : [];
   } catch (error) {
     console.error('Error fetching orders:', error);
     throw error;
@@ -61,14 +61,11 @@ export const getOrders = async (filters = {}) => {
  */
 export const getOrderDetails = async (orderId) => {
   try {
-    if (!getAuthToken()) {
-      throw new Error('User must be authenticated to view order details');
-    }
+    const user = getCurrentUser();
+    if (!user) throw new Error('User must be authenticated to view order details');
 
-    const result = await executeProcedure('SP_GetOrderDetails', {
-      p_OrderId: orderId,
-    });
-    return Array.isArray(result) ? result[0] : result;
+    const result = await orderApi.getOrderDetails(orderId);
+    return result.status ? (Array.isArray(result.data) ? result.data[0] : result.data) : null;
   } catch (error) {
     console.error(`Error fetching order details ${orderId}:`, error);
     throw error;
@@ -82,13 +79,10 @@ export const getOrderDetails = async (orderId) => {
  */
 export const cancelOrder = async (orderId) => {
   try {
-    if (!getAuthToken()) {
-      throw new Error('User must be authenticated to cancel order');
-    }
+    const user = getCurrentUser();
+    if (!user) throw new Error('User must be authenticated to cancel order');
 
-    const result = await executeProcedure('SP_CancelOrder', {
-      p_OrderId: orderId,
-    });
+    const result = await orderApi.cancelOrder(user.userId, orderId);
     return result;
   } catch (error) {
     console.error(`Error canceling order ${orderId}:`, error);

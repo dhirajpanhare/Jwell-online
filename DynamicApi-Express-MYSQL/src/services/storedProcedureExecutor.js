@@ -50,7 +50,7 @@ class StoredProcedureExecutor {
             }
 
             const executionTime = Date.now() - startTime;
-            this.logger.info(`Procedure ${procedureName} executed successfully in ${executeTime}ms`);
+            this.logger.info(`Procedure ${procedureName} executed successfully in ${executionTime}ms`);
 
             return {
                 success: true,

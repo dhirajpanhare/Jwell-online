@@ -1,132 +1,73 @@
 /**
  * Authentication Routes
- * Handles OTP sending and verification
+ * Handles user registration, login, OTP verification, password reset, and profile management
  */
 
 const express = require('express');
+const { body, validationResult } = require('express-validator');
+const authController = require('../controllers/authController');
+const { verifyAuth } = require('../middleware/auth');
+
 const router = express.Router();
-const { sendOTPEmail } = require('../services/emailService');
-const logger = require('../utils/logger');
 
-router.post('/send-otp', async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ success: false, message: 'Invalid email address' });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    if (!global.otpStorage) {
-      global.otpStorage = {};
-    }
-
-    const expiryTime = Date.now() + 10 * 60 * 1000;
-    global.otpStorage[email] = {
-      code: otp,
-      expiresAt: expiryTime,
-      attempts: 0,
-    };
-
-    const emailResult = await sendOTPEmail(email, otp, 10);
-
-    if (emailResult.success) {
-      logger.info(`[OTP] Generated for ${email}: ${otp} (expires at ${new Date(expiryTime).toISOString()})`);
-
-      return res.json({
-        success: true,
-        message: 'OTP sent successfully. Check your email.',
-        data: {
-          messageId: emailResult.messageId,
-          email: email,
-          expiresIn: 600,
-        },
-      });
-    } else {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to send OTP email',
-        error: emailResult.error,
-      });
-    }
-  } catch (error) {
-    logger.error('[OTP Send Error]', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while sending OTP',
-      error: error.message,
-    });
+// Validation middleware helper
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ status: false, message: errors.array()[0].msg });
   }
-});
+  next();
+};
 
-router.post('/verify-otp', async (req, res) => {
-  try {
-    const { email, otp } = req.body;
+// Validation rules
+const registerRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('firstName').trim().notEmpty().withMessage('First name is required'),
+  body('phoneNumber').optional().matches(/^[6-9]\d{9}$/).withMessage('Invalid Indian mobile number'),
+];
 
-    if (!email || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and OTP are required',
-      });
-    }
+const loginRules = [
+  body('emailOrMobile').trim().notEmpty().withMessage('Email or mobile is required'),
+  body('password').notEmpty().withMessage('Password is required'),
+];
 
-    if (!global.otpStorage || !global.otpStorage[email]) {
-      return res.status(400).json({
-        success: false,
-        message: 'OTP not found. Please request a new one.',
-      });
-    }
+const emailRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+];
 
-    const storedOTP = global.otpStorage[email];
+const otpRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('otp').isLength({ min: 4, max: 8 }).isNumeric().withMessage('Valid OTP required'),
+];
 
-    if (Date.now() > storedOTP.expiresAt) {
-      delete global.otpStorage[email];
-      return res.status(400).json({
-        success: false,
-        message: 'OTP has expired. Please request a new one.',
-      });
-    }
+const resetPasswordRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+];
 
-    if (storedOTP.attempts >= 5) {
-      delete global.otpStorage[email];
-      return res.status(400).json({
-        success: false,
-        message: 'Too many invalid attempts. Please request a new OTP.',
-      });
-    }
+const changePasswordRules = [
+  body('oldPassword').notEmpty().withMessage('Old password is required'),
+  body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
+];
 
-    if (storedOTP.code !== otp.toString()) {
-      storedOTP.attempts += 1;
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP. Please try again.',
-        attemptsRemaining: 5 - storedOTP.attempts,
-      });
-    }
+/**
+ * Public routes
+ */
+router.post('/register', registerRules, validate, authController.register);
+router.post('/login', loginRules, validate, authController.login);
+router.post('/send-otp', emailRules, validate, authController.sendOtp);
+router.post('/verify-email-otp', otpRules, validate, authController.verifyEmailOtp);
+router.post('/resend-otp', emailRules, validate, authController.resendOtp);
+router.post('/forgot-password', emailRules, validate, authController.forgotPassword);
+router.post('/verify-reset-otp', otpRules, validate, authController.verifyResetOtp);
+router.post('/reset-password', resetPasswordRules, validate, authController.resetPassword);
 
-    delete global.otpStorage[email];
-    const userId = `user_${Date.now()}`;
-
-    logger.info(`[OTP Verified] User ${email} authenticated successfully`);
-
-    return res.json({
-      success: true,
-      message: 'OTP verified successfully',
-      data: {
-        userId: userId,
-        email: email,
-        authenticatedAt: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    logger.error('[OTP Verification Error]', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while verifying OTP',
-      error: error.message,
-    });
-  }
-});
+/**
+ * Protected routes
+ */
+router.get('/me', verifyAuth, authController.getCurrentUser);
+router.put('/profile', verifyAuth, authController.updateProfile);
+router.post('/change-password', verifyAuth, changePasswordRules, validate, authController.changePassword);
 
 module.exports = router;

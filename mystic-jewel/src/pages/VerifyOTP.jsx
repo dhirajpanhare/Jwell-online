@@ -64,8 +64,11 @@ const VerifyOTP = () => {
         createdAt: new Date().toISOString(),
       };
       setUser(demoUser);
-      localStorage.setItem('user', JSON.stringify(demoUser));
-      localStorage.setItem('authToken', 'demo-token-' + Date.now());
+      // Demo mode: store user in sessionStorage only — no token in localStorage
+      try { sessionStorage.setItem('user', JSON.stringify(demoUser)); } catch (_) {}
+      import('../api/authApi').then(({ setAccessToken }) => {
+        setAccessToken('demo-token-' + Date.now());
+      });
       setTimeout(() => {
         navigate('/', { replace: true });
       }, 1500);

@@ -1,40 +1,30 @@
 import axios from 'axios';
+import { getAuthToken } from './authApi';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor - Attach JWT token if exists
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    const token = getAuthToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor - Handle errors
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401) {
-      // Clear authentication
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      // Redirect to login
-      window.location.href = '/login';
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      const path = window.location.pathname;
+      if (!['/login', '/register', '/forgot-password'].includes(path) && !path.startsWith('/admin')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

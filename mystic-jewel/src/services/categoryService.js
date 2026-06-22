@@ -1,37 +1,30 @@
-import { executeProcedure } from '../api/dynamicApi';
+import { categoryApi } from '../api/dynamicApiService';
 
-/**
- * Fetch all product categories
- * @returns {Promise<Array>} Array of categories
- */
+const toArray = (result) => {
+  if (Array.isArray(result)) return result;
+  if (Array.isArray(result?.data)) return result.data;
+  return [];
+};
+
 export const getCategories = async () => {
   try {
-    const result = await executeProcedure('SP_GetCategories', {});
-    return Array.isArray(result) ? result : result?.data || [];
+    const result = await categoryApi.getCategories();
+    return toArray(result);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    throw error;
+    return [];
   }
 };
 
-/**
- * Fetch category by ID
- * @param {number|string} categoryId - Category ID
- * @returns {Promise<object>} Category details
- */
 export const getCategoryById = async (categoryId) => {
   try {
-    const result = await executeProcedure('SP_GetCategoryById', {
-      p_CategoryId: categoryId,
-    });
-    return Array.isArray(result) ? result[0] : result;
+    const result = await categoryApi.getCategoryById(categoryId);
+    const arr = toArray(result);
+    return arr[0] || null;
   } catch (error) {
     console.error(`Error fetching category ${categoryId}:`, error);
-    throw error;
+    return null;
   }
 };
 
-export default {
-  getCategories,
-  getCategoryById,
-};
+export default { getCategories, getCategoryById };
